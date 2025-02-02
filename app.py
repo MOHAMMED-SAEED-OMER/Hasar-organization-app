@@ -10,8 +10,8 @@ def init_supabase() -> Client:
 
 supabase = init_supabase()
 
-# Define the exact table name with double quotes to handle spaces
-TABLE_NAME = '"finance database"'  # Note the double quotes
+# Use the exact table name without double quotes in the API
+TABLE_NAME = 'finance database'
 
 # Fetch column names from the table
 def get_column_names():
@@ -21,15 +21,17 @@ def get_column_names():
         if response.data:
             return list(response.data[0].keys())
         else:
-            # If the table is empty, fetch columns using information_schema
+            # If the table is empty, fetch columns via SQL
             query = """
                 SELECT column_name
                 FROM information_schema.columns
                 WHERE table_name = 'finance database'
                   AND table_schema = 'public';
             """
-            result = supabase.rpc('exec', {"query": query}).execute().data
-            return [col["column_name"] for col in result]
+            # Using PostgREST RPC function is not required here
+            # So we'll skip supabase.rpc() and rely only on API calls
+            result = supabase.table('information_schema.columns').select('column_name').eq('table_name', 'finance database').execute()
+            return [col["column_name"] for col in result.data]
     except Exception as e:
         st.error(f"Error fetching column names: {e}")
         return []
