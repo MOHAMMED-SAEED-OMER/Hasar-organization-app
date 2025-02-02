@@ -10,8 +10,8 @@ def init_supabase() -> Client:
 
 supabase = init_supabase()
 
-# Use the exact table name
-TABLE_NAME = 'finance database'
+# Updated table name
+TABLE_NAME = 'database'
 
 # Fetch column names from the table
 def get_column_names():
@@ -21,8 +21,8 @@ def get_column_names():
         if response.data:
             return list(response.data[0].keys())
         else:
-            st.warning("The table exists but has no data to infer columns.")
-            return []
+            # Provide hardcoded column names if no data exists
+            return ["transaction type", "value", "date"]
     except Exception as e:
         st.error(f"Error fetching column names: {e}")
         return []
@@ -47,13 +47,11 @@ if data:
 else:
     st.write("No data found.")
 
-# Form to add new data (automatically uses column names)
+# Form to add new data
 st.header("Add New Record")
 with st.form("new_record_form"):
     input_values = {}
     for col in columns:
-        if col == "id":  # Skip auto-generated ID
-            continue
         input_values[col] = st.text_input(f"Enter {col}")
 
     submitted = st.form_submit_button("Submit")
