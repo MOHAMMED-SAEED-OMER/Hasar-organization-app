@@ -10,7 +10,7 @@ def init_supabase() -> Client:
 
 supabase = init_supabase()
 
-# Use the exact table name without double quotes in the API
+# Use the exact table name
 TABLE_NAME = 'finance database'
 
 # Fetch column names from the table
@@ -21,16 +21,11 @@ def get_column_names():
         if response.data:
             return list(response.data[0].keys())
         else:
-            # If the table is empty, fetch columns via SQL
-            query = """
-                SELECT column_name
-                FROM information_schema.columns
-                WHERE table_name = 'finance database'
-                  AND table_schema = 'public';
-            """
-            # Using PostgREST RPC function is not required here
-            # So we'll skip supabase.rpc() and rely only on API calls
-            result = supabase.table('information_schema.columns').select('column_name').eq('table_name', 'finance database').execute()
+            # Querying information_schema to fetch column names
+            result = supabase.table('information_schema.columns') \
+                             .select('column_name') \
+                             .eq('table_name', 'finance database') \
+                             .execute()
             return [col["column_name"] for col in result.data]
     except Exception as e:
         st.error(f"Error fetching column names: {e}")
@@ -38,6 +33,7 @@ def get_column_names():
 
 # Fetch data and columns
 columns = get_column_names()
+
 try:
     data_response = supabase.table(TABLE_NAME).select("*").execute()
     data = data_response.data
@@ -55,13 +51,12 @@ if data:
 else:
     st.write("No data found.")
 
-# Form to add new data (automatically uses column names)
+# Form to add new data
 st.header("Add New Record")
 with st.form("new_record_form"):
     input_values = {}
     for col in columns:
-        # Skip "id" (auto-generated)
-        if col == "id":
+        if col == "id":  # Skip auto-generated ID
             continue
         input_values[col] = st.text_input(f"Enter {col}")
 
@@ -71,7 +66,7 @@ with st.form("new_record_form"):
         try:
             # Insert new record
             supabase.table(TABLE_NAME).insert(input_values).execute()
-            st.success("Record added!")
+            st.success("Record added successfully!")
             st.experimental_rerun()
         except Exception as e:
             st.error(f"Error adding record: {e}")
