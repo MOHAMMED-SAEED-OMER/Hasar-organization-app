@@ -10,19 +10,23 @@ def init_supabase() -> Client:
 
 supabase = init_supabase()
 
+# Define the exact table name with double quotes to handle spaces
+TABLE_NAME = '"finance database"'  # Note the double quotes
+
 # Fetch column names from the table
 def get_column_names():
     try:
         # Fetch a single row to infer columns
-        response = supabase.table("finance_database").select("*").limit(1).execute()
+        response = supabase.table(TABLE_NAME).select("*").limit(1).execute()
         if response.data:
             return list(response.data[0].keys())
         else:
-            # If the table is empty, fetch columns via RPC function (alternative to raw SQL)
+            # If the table is empty, fetch columns using information_schema
             query = """
                 SELECT column_name
                 FROM information_schema.columns
-                WHERE table_name = 'finance_database'
+                WHERE table_name = 'finance database'
+                  AND table_schema = 'public';
             """
             result = supabase.rpc('exec', {"query": query}).execute().data
             return [col["column_name"] for col in result]
@@ -33,7 +37,7 @@ def get_column_names():
 # Fetch data and columns
 columns = get_column_names()
 try:
-    data_response = supabase.table("finance_database").select("*").execute()
+    data_response = supabase.table(TABLE_NAME).select("*").execute()
     data = data_response.data
 except Exception as e:
     st.error(f"Error fetching data: {e}")
@@ -64,7 +68,7 @@ with st.form("new_record_form"):
     if submitted:
         try:
             # Insert new record
-            supabase.table("finance_database").insert(input_values).execute()
+            supabase.table(TABLE_NAME).insert(input_values).execute()
             st.success("Record added!")
             st.experimental_rerun()
         except Exception as e:
