@@ -16,51 +16,32 @@ TABLE_NAME = 'database'
 # Fetch column names from the table
 def get_column_names():
     try:
-        # Fetch a single row to infer column names
         response = supabase.table(TABLE_NAME).select("*").limit(1).execute()
         if response.data:
             return list(response.data[0].keys())
         else:
-            # Provide hardcoded column names if no data exists
-            return ["transaction type", "value", "date"]
+            return ["transaction type", "value", "date"]  # Fallback if table is empty
     except Exception as e:
         st.error(f"Error fetching column names: {e}")
         return []
 
-# Fetch data and columns
-columns = get_column_names()
+# Fetch data
+def fetch_data():
+    try:
+        response = supabase.table(TABLE_NAME).select("*").execute()
+        return response.data
+    except Exception as e:
+        st.error(f"Error fetching data: {e}")
+        return []
 
-try:
-    data_response = supabase.table(TABLE_NAME).select("*").execute()
-    data = data_response.data
-except Exception as e:
-    st.error(f"Error fetching data: {e}")
-    data = []
-
-# Streamlit app
-st.title("Financial Data App")
+# Streamlit App
+st.title("Financial Data Overview")
 
 # Display existing data
-st.header("Existing Records")
+st.header("Current Database Records")
+data = fetch_data()
+
 if data:
     st.table(data)
 else:
-    st.write("No data found.")
-
-# Form to add new data
-st.header("Add New Record")
-with st.form("new_record_form"):
-    input_values = {}
-    for col in columns:
-        input_values[col] = st.text_input(f"Enter {col}")
-
-    submitted = st.form_submit_button("Submit")
-
-    if submitted:
-        try:
-            # Insert new record
-            supabase.table(TABLE_NAME).insert(input_values).execute()
-            st.success("Record added successfully!")
-            st.experimental_rerun()
-        except Exception as e:
-            st.error(f"Error adding record: {e}")
+    st.write("No data found in the database.")
