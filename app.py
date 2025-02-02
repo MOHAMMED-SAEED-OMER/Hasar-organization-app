@@ -16,17 +16,13 @@ TABLE_NAME = 'finance database'
 # Fetch column names from the table
 def get_column_names():
     try:
-        # Fetch a single row to infer columns
+        # Fetch a single row to infer column names
         response = supabase.table(TABLE_NAME).select("*").limit(1).execute()
         if response.data:
             return list(response.data[0].keys())
         else:
-            # Querying information_schema to fetch column names
-            result = supabase.table('information_schema.columns') \
-                             .select('column_name') \
-                             .eq('table_name', 'finance database') \
-                             .execute()
-            return [col["column_name"] for col in result.data]
+            st.warning("The table exists but has no data to infer columns.")
+            return []
     except Exception as e:
         st.error(f"Error fetching column names: {e}")
         return []
@@ -51,7 +47,7 @@ if data:
 else:
     st.write("No data found.")
 
-# Form to add new data
+# Form to add new data (automatically uses column names)
 st.header("Add New Record")
 with st.form("new_record_form"):
     input_values = {}
